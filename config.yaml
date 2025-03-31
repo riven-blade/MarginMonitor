@@ -1,0 +1,7 @@
+exchange:
+  apiKey: "您的API_KEY"
+  apiSecret: "您的API_SECRET"
+
+monitor:
+  checkInterval: "30s"
+  dangerThreshold: 5.0
