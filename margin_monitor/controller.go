@@ -2,6 +2,7 @@ package margin_monitor
 
 import (
 	"context"
+	"log"
 	"margin_monitor/config"
 	"time"
 )
@@ -9,7 +10,7 @@ import (
 func NewController(conf *config.Config) (*Controller, error) {
 	m, err := NewMonitor(conf)
 	if err != nil {
-		return nil, err
+		log.Fatalf("init monitor err: %v", err)
 	}
 	return &Controller{
 		Conf: conf,
@@ -27,10 +28,18 @@ func (c *Controller) Start(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		default:
-			time.Sleep(time.Second * time.Duration(c.Conf.Monitor.CheckInterval))
-			// 触发检查动作
-
+		case <-time.After(time.Second * time.Duration(c.Conf.Monitor.CheckInterval)):
+			positions, err := c.M.FetchPositions()
+			if err != nil {
+				log.Printf("fetch positions error: %v\n", err)
+				continue
+			}
+			for i := range positions {
+				ps := positions[i]
+				if *ps.MarginRatio > c.Conf.Monitor.DangerThreshold {
+					go c.M.AddMargin(*ps.Symbol, *ps.InitialMargin/2)
+				}
+			}
 		}
 	}
 }

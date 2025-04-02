@@ -22,8 +22,8 @@ func LoadConfig(filename string) (*Config, error) {
 
 // Exchange 配置结构体
 type Exchange struct {
-	ExchangeKey    string `yaml:"exchange_key"`
-	ExchangeSecret string `yaml:"exchange_secret"`
+	ExchangeKey    string `yaml:"exchangeKey"`
+	ExchangeSecret string `yaml:"exchangeSecret"`
 }
 
 // Monitor 配置结构体
@@ -36,4 +36,11 @@ type Monitor struct {
 type Config struct {
 	Exchange Exchange `yaml:"exchange"`
 	Monitor  Monitor  `yaml:"monitor"`
+	Telegram Telegram `yaml:"telegram"`
+	Proxy    string   `yaml:"proxy"`
+}
+
+type Telegram struct {
+	BotToken string `yaml:"bot_token"`
+	ChatID   int64  `yaml:"chat_id"`
 }
