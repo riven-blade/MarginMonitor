@@ -36,6 +36,8 @@ func (c *Controller) Start(ctx context.Context) error {
 			}
 			for i := range positions {
 				ps := positions[i]
+				log.Printf("Checking position: Symbol=%s, MarginRatio=%.4f, InitialMargin=%.4f\n",
+					*ps.Symbol, *ps.MarginRatio, *ps.InitialMargin)
 				if *ps.MarginRatio > c.Conf.Monitor.DangerThreshold {
 					go c.M.AddMargin(*ps.Symbol, *ps.InitialMargin/2)
 				}
