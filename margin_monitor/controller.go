@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"margin_monitor/config"
+	"math"
 	"time"
 )
 
@@ -41,7 +42,13 @@ func (c *Controller) Start(ctx context.Context) error {
 				if *ps.MarginRatio > c.Conf.Monitor.DangerThreshold {
 					log.Printf("⚠️ Margin ratio exceeds threshold! Adding margin: Symbol=%s, Amount=%.4f\n",
 						*ps.Symbol, *ps.InitialMargin/2)
-					go c.M.AddMargin(*ps.Symbol, *ps.InitialMargin/2)
+					// 计算持仓量
+					amount := *ps.InitialMargin
+					if *ps.InitialMargin > 20 {
+						amount = *ps.InitialMargin / 2
+					}
+					amount = math.Ceil(amount)
+					go c.M.AddMargin(*ps.Symbol, amount)
 				}
 			}
 		}
