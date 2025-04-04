@@ -36,7 +36,7 @@ func NewMonitor(conf *config.Config) (*Monitor, error) {
 	}
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   10 * time.Second,
+		Timeout:   3 * time.Second,
 	}
 
 	bot, err := tgbotapi.NewBotAPIWithClient(conf.Telegram.BotToken, tgbotapi.APIEndpoint, client)

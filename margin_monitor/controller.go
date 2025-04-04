@@ -43,11 +43,7 @@ func (c *Controller) Start(ctx context.Context) error {
 					log.Printf("⚠️ Margin ratio exceeds threshold! Adding margin: Symbol=%s, Amount=%.4f\n",
 						*ps.Symbol, *ps.InitialMargin/2)
 					// 计算持仓量
-					amount := *ps.InitialMargin
-					if *ps.InitialMargin > 20 {
-						amount = *ps.InitialMargin / 2
-					}
-					amount = math.Ceil(amount)
+					amount := math.Ceil(*ps.InitialMargin * c.Conf.AddMultiple)
 					go c.M.AddMargin(*ps.Symbol, amount)
 				}
 			}

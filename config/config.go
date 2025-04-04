@@ -34,10 +34,11 @@ type Monitor struct {
 
 // Config 整体配置
 type Config struct {
-	Exchange Exchange `yaml:"exchange"`
-	Monitor  Monitor  `yaml:"monitor"`
-	Telegram Telegram `yaml:"telegram"`
-	Proxy    string   `yaml:"proxy"`
+	Exchange    Exchange `yaml:"exchange"`
+	Monitor     Monitor  `yaml:"monitor"`
+	Telegram    Telegram `yaml:"telegram"`
+	Proxy       string   `yaml:"proxy"`
+	AddMultiple float64  `yaml:"add_multiple"`
 }
 
 type Telegram struct {
