@@ -3,32 +3,31 @@ package margin_monitor
 import (
 	"fmt"
 	"log"
+	"margin_monitor/exchange"
 	"net/http"
 	"net/url"
 	"time"
 
-	ccxt "github.com/ccxt/ccxt/go/v4"
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"margin_monitor/config"
 )
 
 type Monitor struct {
-	Exchange ccxt.Binance
+	Exchange []exchange.Exchange
 	TGBot    *tgbotapi.BotAPI
 	ChatID   int64
 }
 
 func NewMonitor(conf *config.Config) (*Monitor, error) {
-	exchange := ccxt.NewBinance(map[string]interface{}{
-		"apiKey": conf.Exchange.ExchangeKey,
-		"secret": conf.Exchange.ExchangeSecret,
-		"options": map[string]interface{}{
-			"defaultType": "future",
-		},
-	})
-	exchange.WsProxy = conf.Proxy
-	exchange.HttpsProxy = conf.Proxy
-	<-exchange.LoadMarkets()
+	ecs := make([]exchange.Exchange, 0)
+	for i := range conf.Exchange {
+		switch conf.Exchange[i].Name {
+		case "bybit":
+			ecs = append(ecs, exchange.NewByBit(conf.Exchange[i].ExchangeKey, conf.Exchange[i].ExchangeSecret, conf.Proxy))
+		case "binance":
+			ecs = append(ecs, exchange.NewBinance(conf.Exchange[i].ExchangeKey, conf.Exchange[i].ExchangeSecret, conf.Proxy))
+		}
+	}
 
 	proxyURL, _ := url.Parse(conf.Proxy)
 	transport := &http.Transport{
@@ -45,36 +44,10 @@ func NewMonitor(conf *config.Config) (*Monitor, error) {
 	}
 
 	return &Monitor{
-		Exchange: exchange,
+		Exchange: ecs,
 		TGBot:    bot,
 		ChatID:   conf.Telegram.ChatID,
 	}, nil
-}
-
-func (m *Monitor) FetchPositions() ([]ccxt.Position, error) {
-	positions, err := m.Exchange.FetchPositions()
-	if err != nil {
-		m.SendTelegramMessage(fmt.Sprintf("⚠️ Fetch positions error: %v", err))
-		return nil, err
-	}
-	return positions, nil
-}
-
-func (m *Monitor) AddMargin(symbol string, amount float64) {
-	marginChan := m.Exchange.AddMargin(symbol, amount)
-	result := <-marginChan
-	if resultData, ok := result.(map[string]interface{}); ok {
-		if status, ok := resultData["status"].(string); ok && status == "ok" {
-			msg := fmt.Sprintf("✅ Margin added: %s +%.2f USDT", symbol, amount)
-			fmt.Println(msg)
-			m.SendTelegramMessage(msg)
-			return
-		}
-	}
-
-	msg := fmt.Sprintf("❌ Margin add failed: %s +%.2f USDT", symbol, amount)
-	fmt.Println(msg)
-	m.SendTelegramMessage(msg)
 }
 
 func (m *Monitor) SendTelegramMessage(message string) {
