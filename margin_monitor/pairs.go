@@ -105,7 +105,7 @@ type pairEntry struct {
 func (c *Controller) checkPairs() {
 	for i := range c.Conf.RefreshPairs.Bot {
 		bot := c.Conf.RefreshPairs.Bot[i]
-		go c.processBot(bot)
+		c.processBot(bot)
 	}
 }
 
@@ -151,6 +151,11 @@ func (c *Controller) processBot(bot config.Bot) {
 		log.Printf("topPair 为空")
 	}
 	log.Printf("%s top 币处理完成", bot.Name)
+
+	if bot.ReloadAPI == "" {
+		log.Println("没有设置 ReloadAPI, 跳过")
+		return
+	}
 	log.Println("等待防止触发 API 限速, 等待10min 处理下一个机器人")
 	// 等待防止触发 API 限速
 	time.Sleep(10 * time.Minute)
@@ -208,8 +213,11 @@ func NotifyPairUpdate(pairs []pairEntry, title string, sendFunc func(string), ch
 		if i > 0 {
 			header = fmt.Sprintf("%s (Page %d/%d)", title, i+1, len(chunks))
 		}
-		sendFunc(fmt.Sprintf("%s\n%s", header, chunk))
+		// 打印日志chunk
+		log.Printf("%s\n%s", header, chunk)
+		// sendFunc(fmt.Sprintf("%s\n", header))
 	}
+	sendFunc(fmt.Sprintf("%s\nCollect pairs finished.", title))
 }
 
 func writeJSONAsyncWithTimestamp(prefix string, data interface{}) {

@@ -35,12 +35,21 @@ func (c *Controller) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	pairTicker := time.NewTicker(time.Duration(c.Conf.RefreshPairs.Interval) * time.Second)
-	checkTicker := time.NewTicker(time.Duration(c.Conf.Monitor.CheckInterval) * time.Second)
-	defer pairTicker.Stop()
-	defer checkTicker.Stop()
+	var (
+		pairTicker  *time.Ticker
+		checkTicker *time.Ticker
+	)
 
-	go c.checkPairs()
+	if c.Conf.RefreshPairs.Interval > 0 {
+		pairTicker = time.NewTicker(time.Duration(c.Conf.RefreshPairs.Interval) * time.Second)
+		defer pairTicker.Stop()
+		go c.checkPairs()
+	}
+
+	if c.Conf.Monitor.CheckInterval > 0 {
+		checkTicker = time.NewTicker(time.Duration(c.Conf.Monitor.CheckInterval) * time.Second)
+		defer checkTicker.Stop()
+	}
 
 	for {
 		select {
@@ -48,13 +57,27 @@ func (c *Controller) Start(ctx context.Context) error {
 			log.Println("Controller stopped")
 			return nil
 
-		case <-pairTicker.C:
+		case <-pairTickerC(pairTicker):
 			go c.checkPairs()
 
-		case <-checkTicker.C:
+		case <-checkTickerC(checkTicker):
 			go c.checkExchanges()
 		}
 	}
+}
+
+func pairTickerC(t *time.Ticker) <-chan time.Time {
+	if t != nil {
+		return t.C
+	}
+	return nil
+}
+
+func checkTickerC(t *time.Ticker) <-chan time.Time {
+	if t != nil {
+		return t.C
+	}
+	return nil
 }
 
 // checkExchanges 遍历所有交易所并检查持仓

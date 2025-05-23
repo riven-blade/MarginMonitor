@@ -29,9 +29,18 @@ func NewMonitor(conf *config.Config) (*Monitor, error) {
 		}
 	}
 
-	proxyURL, _ := url.Parse(conf.Proxy)
-	transport := &http.Transport{
-		Proxy: http.ProxyURL(proxyURL),
+	var transport *http.Transport
+	if conf.Proxy != "" {
+		proxyURL, err := url.Parse(conf.Proxy)
+		if err != nil {
+			log.Printf("Invalid proxy URL: %v\n", err)
+		} else {
+			transport = &http.Transport{
+				Proxy: http.ProxyURL(proxyURL),
+			}
+		}
+	} else {
+		transport = &http.Transport{}
 	}
 	client := &http.Client{
 		Transport: transport,
